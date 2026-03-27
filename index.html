@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SABA v4.2 - Sistema RJ</title>
+    <title>SABA v4.8 - Sistema RJ</title>
     <style>
-        :root { --blue: #1a73e8; --red: #d93025; --green: #188038; --dark: #202124; }
+        :root { --blue: #1a73e8; --red: #d93025; --green: #188038; }
         body { font-family: 'Segoe UI', sans-serif; background: #f1f3f4; margin: 0; padding: 15px; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); border-top: 8px solid var(--blue); }
         .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
@@ -15,12 +15,13 @@
         .btn-main { background: var(--blue); color: white; width: 100%; padding: 18px; font-size: 18px; margin-top: 20px; }
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
         .card { border: 1px solid #dadce0; padding: 15px; border-radius: 8px; background: #fff; }
-        textarea { width: 100%; height: 140px; border: 2px solid #dfe1e5; border-radius: 6px; padding: 10px; box-sizing: border-box; font-family: 'Consolas', monospace; font-size: 15px; resize: none; }
+        /* Box de texto otimizado para colagem */
+        textarea { width: 100%; height: 160px; border: 2px solid #dfe1e5; border-radius: 6px; padding: 10px; box-sizing: border-box; font-family: 'Consolas', monospace; font-size: 18px; resize: none; color: #202124; background: #ffffff; }
+        textarea:focus { border-color: var(--blue); outline: none; background: #fffde7; }
         .horarios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .h-box { background: #f8f9fa; border: 1px solid #dadce0; padding: 10px; border-radius: 6px; text-align: center; }
-        .h-box.destaque { background: #e8f0fe; border-color: var(--blue); }
         .h-box span { font-size: 11px; font-weight: bold; color: #5f6368; display: block; margin-bottom: 5px; }
-        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 4px; text-align: center; font-weight: bold; font-size: 16px; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 4px; text-align: center; font-weight: bold; font-size: 18px; box-sizing: border-box; }
         .result-area { margin-top: 30px; display: none; }
         .status-chip { background: #e8f0fe; color: var(--blue); padding: 12px; border-radius: 6px; font-weight: bold; margin-bottom: 15px; border-left: 5px solid var(--blue); }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -41,17 +42,17 @@
         <button class="btn btn-danger" onclick="reset()">🧨 Limpar Sistema</button>
     </div>
 
-    <h2 style="text-align:center; color:var(--blue); margin-bottom:25px;">SABA v4.2 - Gestor de Ciclos</h2>
+    <h2 style="text-align:center; color:var(--blue); margin-bottom:25px;">SABA v4.8 - Gestor de Ciclos</h2>
 
     <div class="main-grid">
         <div class="card">
-            <label><b>📋 Lista de Atrasados</b></label>
-            <textarea id="lista" oninput="salvar()"></textarea>
+            <label><b>📋 Colar Lista de Atrasados</b></label>
+            <textarea id="lista" placeholder="Clica aqui e cola a tua lista..."></textarea>
         </div>
         <div class="card">
-            <label><b>🕒 Lançar Resultado</b></label>
+            <label><b>🕒 Lançar Resultado (1º ao 5º)</b></label>
             <div class="horarios-grid">
-                <div class="h-box destaque"><span>CORUJA</span><input type="text" id="rCOR"></div>
+                <div class="h-box"><span>CORUJA</span><input type="text" id="rCOR"></div>
                 <div class="h-box"><span>PPT</span><input type="text" id="rPPT"></div>
                 <div class="h-box"><span>PTM</span><input type="text" id="rPTM"></div>
                 <div class="h-box"><span>PT</span><input type="text" id="rPT"></div>
@@ -82,49 +83,91 @@
         21:{n:"Touro",b:"C",m:"5784"}, 22:{n:"Tigre",b:"C",m:"6987"}, 23:{n:"Urso",b:"C",m:"7792"}, 24:{n:"Veado",b:"C",m:"1896"}, 25:{n:"Vaca",b:"C",m:"6099"}
     };
 
-    function salvar() { localStorage.setItem('saba_v42_data', document.getElementById('lista').value); }
-    function carregar() { document.getElementById('lista').value = localStorage.getItem('saba_v42_data') || ""; }
-    function reset() { if(confirm("Resetar tudo?")) { localStorage.clear(); location.reload(); } }
-
-    function exportarJSON() {
-        const payload = { projeto: "SABA", lista: document.getElementById('lista').value };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
-        const a = document.createElement('a'); a.href = dataStr; a.download = "saba_backup.json"; a.click();
+    function carregar() {
+        const memoria = localStorage.getItem('saba_ciclo_v48');
+        if(memoria) console.log("Ciclo em memória pronto.");
     }
 
-    function importarJSON(e) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const obj = JSON.parse(event.target.result);
-            document.getElementById('lista').value = obj.lista || "";
-            salvar(); alert("Backup restaurado!");
-        };
-        reader.readAsText(e.target.files[0]);
+    function extrair(txt) {
+        return (txt.match(/\d+/g) || []).map(Number).filter(n => n >= 1 && n <= 25);
     }
 
     function executar() {
         const elLista = document.getElementById('lista');
         const ids = ['rCOR', 'rPPT', 'rPTM', 'rPT', 'rPTV', 'rPTN'];
-        let ordem = [...new Set(elLista.value.match(/\b(0?[1-9]|1[0-9]|2[0-5])\b/g).map(Number))];
         
-        if(ordem.length < 5) return alert("Lista de atrasados vazia!");
-
-        let resAtual = [], h = "";
+        // 1. Pega o que está no box agora
+        let entrada = [...new Set(extrair(elLista.value))];
         
-        // 1. Identifica qual box foi preenchido
-        for (let id of ids) {
-            let el = document.getElementById(id);
-            if(el.value) {
-                resAtual = el.value.match(/\b(0?[1-9]|1[0-9]|2[0-5])\b/g).map(Number);
-                h = id.replace('r','');
-                resAtual.forEach(n => { ordem = ordem.filter(x => x !== n); ordem.push(n); });
+        // 2. Se o box estiver vazio, tenta usar o que está salvo no navegador
+        if(entrada.length === 0) {
+            const salvo = localStorage.getItem('saba_ciclo_v48');
+            if(salvo) {
+                entrada = JSON.parse(salvo);
+            } else {
+                return alert("Cola a lista de atrasados primeiro!");
             }
         }
 
-        if(!resAtual.length) return alert("Insira um resultado!");
+        // 3. Verifica qual resultado foi digitado
+        let resSorteio = [], hNome = "";
+        for (let id of ids) {
+            let n = extrair(document.getElementById(id).value);
+            if(n.length > 0) { resSorteio = n; hNome = id.replace('r',''); }
+        }
+        if(resSorteio.length === 0) return alert("Digita o resultado do sorteio!");
 
-        // 2. LIMPA TODOS OS BOXES DE HORÁRIOS (Incluindo a Coruja)
+        // 4. Atualiza a lógica do ciclo
+        resSorteio.forEach(n => {
+            entrada = entrada.filter(x => x !== n);
+            entrada.push(n);
+        });
+
+        // 5. Salva no navegador e LIMPA O BOX
+        localStorage.setItem('saba_ciclo_v48', JSON.stringify(entrada));
+        elLista.value = ""; 
         ids.forEach(id => document.getElementById(id).value = "");
 
-        // 3. Atualiza lista e salva
-        elLista
+        // 6. Calcula Base e Mostra Palpites
+        let ct = {A:0, B:0, C:0}; resSorteio.forEach(n => { if(db[n]) ct[db[n].b]++; });
+        let m = (ct.C >= 2) ? 'C' : (ct.B >= 2 ? 'B' : 'A');
+        const aA = entrada.filter(n => db[n].b === 'A'), aB = entrada.filter(n => db[n].b === 'B'), aC = entrada.filter(n => db[n].b === 'C');
+        let f = (m==='C') ? [aC[0], aC[1], aB[0], aB[1], aA[0]] : (m==='B' ? [aB[0], aB[1], aC[0], aC[1], aA[0]] : [aA[0], aA[1], aC[0], aB[0], aC[1]]);
+
+        document.getElementById('saida').style.display = 'block';
+        document.getElementById('info').innerText = `✅ Atualizado via ${hNome} | Base: ${m} | Lista Salva e Box Limpo.`;
+        document.getElementById('corpoF').innerHTML = f.map(n => `<tr><td><b>${n.toString().padStart(2,'0')}</b></td><td>${db[n].n}</td><td style="color:var(--blue); font-weight:bold;">${db[n].m}</td><td><span class="badge ${db[n].b}">${db[n].b}</span></td></tr>`).join('');
+        
+        let cp = [...entrada], tH = "";
+        for(let i=1; i<=10; i++) {
+            let t = cp.splice(0,3);
+            if(t.length === 3) tH += `<div class="terno-card">T${i}<br>${t.map(n=>n.toString().padStart(2,'0')).join('-')}</div>`;
+        }
+        document.getElementById('corpoT').innerHTML = tH;
+    }
+
+    function reset() { 
+        if(confirm("Limpar memória do ciclo?")) { 
+            localStorage.removeItem('saba_ciclo_v48'); 
+            location.reload(); 
+        } 
+    }
+
+    function exportarJSON() {
+        const salvo = localStorage.getItem('saba_ciclo_v48');
+        const blob = new Blob([salvo], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "saba_backup.json"; a.click();
+    }
+
+    function importarJSON(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            localStorage.setItem('saba_ciclo_v48', event.target.result);
+            alert("Restaurado com sucesso!");
+            location.reload();
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+</script>
+</body>
+</html>
