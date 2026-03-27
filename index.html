@@ -2,79 +2,71 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>SABA v3.1 - Monitor Diário</title>
+    <title>SABA v3.2 - Sistema Blindado</title>
     <style>
         :root { --blue: #1a73e8; --red: #d93025; --green: #188038; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid var(--blue); }
+        .container { max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid var(--blue); }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; background: #eee; padding: 10px; border-radius: 8px; }
         .grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         label { font-weight: bold; display: block; margin-bottom: 8px; color: #444; }
-        textarea { width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; font-size: 13px; resize: none; }
-        
-        /* Grid de Horários */
+        textarea { width: 100%; height: 100px; border: 2px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: monospace; }
         .horarios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .h-box { background: #f8f9fa; padding: 8px; border-radius: 6px; border: 1px solid #eee; text-align: center; }
-        .h-box label { font-size: 12px; margin-bottom: 4px; color: var(--blue); }
-        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 4px; text-align: center; font-weight: bold; }
-        
-        .btn-calc { width: 100%; padding: 18px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; }
-        .btn-reset { background: #ea4335; margin-top: 10px; padding: 10px; font-size: 13px; }
-
+        .h-box { background: #f8f9fa; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #bdc1c6; border-radius: 4px; text-align: center; font-weight: bold; box-sizing: border-box; }
+        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; }
+        .btn-main { width: 100%; padding: 18px; background: var(--blue); color: white; font-size: 16px; margin-top: 10px; }
+        .btn-sec { padding: 8px 15px; background: #444; color: white; font-size: 12px; }
+        .btn-danger { background: var(--red); }
         .output { margin-top: 25px; display: none; border-top: 2px dashed #ccc; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
         th { background: #f8f9fa; }
-        .badge { padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px; }
+        .badge { padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
         .A { background: var(--red); } .B { background: #fbbc04; color: #000; } .C { background: var(--green); }
         .terno-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; }
-        .terno-item { background: #e8f0fe; border: 1px solid #d2e3fc; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 13px; }
+        .terno-item { background: #e8f0fe; border: 1px solid #d2e3fc; padding: 10px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 12px; }
     </style>
 </head>
-<body>
+<body onload="carregarEstado()">
 
 <div class="container">
-    <h2 style="text-align:center; color:var(--blue);">SABA v3.1 - Gestão por Horários</h2>
+    <div class="toolbar">
+        <button class="btn-sec" onclick="exportarBackup()">💾 Backup (JSON)</button>
+        <button class="btn-sec" onclick="document.getElementById('fileInput').click()">📂 Restaurar</button>
+        <input type="file" id="fileInput" style="display:none" onchange="importarBackup(event)">
+        <button class="btn-sec btn-danger" onclick="limparTudo()" style="margin-left: auto;">🧨 Reset Total</button>
+    </div>
+
+    <h2 style="text-align:center; color:var(--blue); margin-top:0;">SABA v3.2 - Gestor de Ciclos</h2>
 
     <div class="grid-main">
-        <div>
-            <div class="card">
-                <label>📋 Lista de Atrasados Atual:</label>
-                <textarea id="txtAtrasados" placeholder="Cole a lista inicial aqui..."></textarea>
-            </div>
-            <div class="card" style="border-left: 5px solid #333;">
-                <label>🦉 Corujinha (Ontem):</label>
-                <input type="text" id="resCORUJA" placeholder="Ex: 20, 08, 25, 23, 17">
-            </div>
-        </div>
-
         <div class="card">
-            <label>🕒 Lançar Resultados de Hoje:</label>
+            <label>📋 Lista de Atrasados (Ciclo Vivo):</label>
+            <textarea id="txtAtrasados" oninput="salvarEstado()"></textarea>
+        </div>
+        <div class="card">
+            <label>🕒 Lançar Resultado do Horário:</label>
             <div class="horarios-grid">
-                <div class="h-box"><label>PPT (09h)</label><input type="text" id="resPPT"></div>
-                <div class="h-box"><label>PTM (11h)</label><input type="text" id="resPTM"></div>
-                <div class="h-box"><label>PT (14h)</label><input type="text" id="resPT"></div>
-                <div class="h-box"><label>PTV (16h)</label><input type="text" id="resPTV"></div>
-                <div class="h-box"><label>PTN (18h)</label><input type="text" id="resPTN"></div>
-                <div class="h-box"><label>COR (21h)</label><input type="text" id="resCOR"></div>
+                <div class="h-box"><label>CORUJA</label><input type="text" id="resCORUJA"></div>
+                <div class="h-box"><label>PPT</label><input type="text" id="resPPT"></div>
+                <div class="h-box"><label>PTM</label><input type="text" id="resPTM"></div>
+                <div class="h-box"><label>PT</label><input type="text" id="resPT"></div>
+                <div class="h-box"><label>PTV</label><input type="text" id="resPTV"></div>
+                <div class="h-box"><label>PTN</label><input type="text" id="resPTN"></div>
             </div>
-            <p style="font-size: 11px; color: #666; margin-top: 10px; text-align: center;">Preencha o horário que saiu e clique abaixo.</p>
         </div>
     </div>
 
-    <button class="btn-calc" onclick="processar()">ATUALIZAR CICLO E GERAR PALPITES</button>
-    <button class="btn-calc btn-reset" onclick="if(confirm('Limpar tudo?')) location.reload()">LIMPAR TUDO (NOVO DIA)</button>
+    <button class="btn-main" onclick="processar()">ATUALIZAR CICLO E GERAR PALPITES</button>
 
     <div id="saida" class="output">
-        <div id="statusMsg" style="background:#e8f0fe; padding:12px; border-radius:6px; margin-bottom:15px; font-weight:bold; color:var(--blue);"></div>
-        
-        <h3 style="color:var(--red); font-size:18px;">🔥 5 Grupos Fortes</h3>
+        <div id="statusMsg" style="background:#e8f0fe; padding:12px; border-radius:6px; margin-bottom:15px; font-weight:bold; color:var(--blue); border-left: 5px solid var(--blue);"></div>
         <table id="tabFortes">
-            <thead><tr><th>Grup</th><th>Bicho</th><th>Milhar</th><th>Base</th></tr></thead>
+            <thead><tr><th>Grupo</th><th>Bicho</th><th>Milhar</th><th>Base</th></tr></thead>
             <tbody></tbody>
         </table>
-
-        <h3 style="color:var(--blue); font-size:18px; margin-top:25px;">🎲 10 Ternos de Grupo</h3>
         <div id="listaTernos" class="terno-grid"></div>
     </div>
 </div>
@@ -88,56 +80,89 @@
         21:{n:"Touro",b:"C",m:"5784"}, 22:{n:"Tigre",b:"C",m:"6987"}, 23:{n:"Urso",b:"C",m:"7792"}, 24:{n:"Veado",b:"C",m:"1896"}, 25:{n:"Vaca",b:"C",m:"6099"}
     };
 
+    function salvarEstado() {
+        const estado = { atrasados: document.getElementById('txtAtrasados').value };
+        localStorage.setItem('saba_backup', JSON.stringify(estado));
+    }
+
+    function carregarEstado() {
+        const salvo = localStorage.getItem('saba_backup');
+        if(salvo) {
+            const dados = JSON.parse(salvo);
+            document.getElementById('txtAtrasados').value = dados.atrasados;
+        }
+    }
+
+    function exportarBackup() {
+        const conteudo = JSON.stringify({ atrasados: document.getElementById('txtAtrasados').value }, null, 2);
+        const blob = new Blob([conteudo], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `saba_backup_${new Date().toLocaleDateString()}.json`;
+        a.click();
+    }
+
+    function importarBackup(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dados = JSON.parse(e.target.result);
+            document.getElementById('txtAtrasados').value = dados.atrasados;
+            salvarEstado();
+            alert("Dados restaurados!");
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function limparTudo() {
+        if(confirm("Isso apagará todo o ciclo atual. Tem certeza?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
     function processar() {
         const txtAtr = document.getElementById('txtAtrasados');
-        const ids = ['resCORUJA', 'resPPT', 'resPTM', 'resPT', 'resPTV', 'resPTN', 'resCOR'];
-        
+        const ids = ['resCORUJA', 'resPPT', 'resPTM', 'resPT', 'resPTV', 'resPTN'];
         let ordem = [...new Set(txtAtr.value.match(/\b(0?[1-9]|1[0-9]|2[0-5])\b/g).map(Number))];
-        if(ordem.length < 5) return alert("Insira a lista de atrasados primeiro!");
+        
+        if(ordem.length < 5) return alert("Lista de atrasados inválida!");
 
         let ultimoRes = [];
-        let nomeHorario = "";
+        let horarioNome = "";
 
-        // Percorre os campos do último para o primeiro para pegar o mais recente preenchido
         for (let id of ids) {
             let el = document.getElementById(id);
             if(el.value) {
                 let nums = el.value.match(/\b(0?[1-9]|1[0-9]|2[0-5])\b/g).map(Number);
                 if(nums.length >= 1) {
                     ultimoRes = nums;
-                    nomeHorario = id.replace('res', '');
-                    
-                    // Atualiza a ordem da lista (quem saiu vai pro fim)
-                    nums.forEach(n => {
-                        ordem = ordem.filter(x => x !== n);
-                        ordem.push(n);
-                    });
-                    
-                    // LIMPA O CAMPO QUE ACABOU DE SER USADO
-                    el.value = "";
+                    horarioNome = id.replace('res', '');
+                    nums.forEach(n => { ordem = ordem.filter(x => x !== n); ordem.push(n); });
+                    el.value = ""; // Limpa campo após processar
                 }
             }
         }
 
-        if(ultimoRes.length === 0) return alert("Preencha o resultado da Coruja ou o horário atual!");
+        if(ultimoRes.length === 0) return alert("Insira o resultado do último sorteio!");
 
-        // Atualiza a caixa de texto da lista
         txtAtr.value = ordem.map(n => n.toString().padStart(2, '0')).join(', ');
+        salvarEstado();
 
         let cont = {A:0, B:0, C:0};
         ultimoRes.forEach(n => { if(db[n]) cont[db[n].b]++; });
-        let modo = (cont.C >= 2) ? 'C' : (cont.B >= 2 ? 'B' : (cont.A >= 2 ? 'A' : 'Neutro'));
+        let modo = (cont.C >= 2) ? 'C' : (cont.B >= 2 ? 'B' : 'Neutro');
 
         const atrA = ordem.filter(n => db[n].b === 'A');
         const atrB = ordem.filter(n => db[n].b === 'B');
         const atrC = ordem.filter(n => db[n].b === 'C');
 
-        let fortes = (modo === 'C') ? [atrC[0], atrC[1], atrB[0], atrB[1], atrA[0]] :
-                     (modo === 'B') ? [atrB[0], atrB[1], atrC[0], atrC[1], atrA[0]] :
+        let fortes = (modo === 'C') ? [atrC[0], atrC[1], atrB[0], atrB[1], atrA[0]] : 
+                     (modo === 'B') ? [atrB[0], atrB[1], atrC[0], atrC[1], atrA[0]] : 
                      [atrC[0], atrB[0], atrA[0], atrC[1], atrB[1]];
 
         document.getElementById('saida').style.display = 'block';
-        document.getElementById('statusMsg').innerHTML = `✅ Atualizado com base no horário: ${nomeHorario} | Dominância: Base ${modo}`;
+        document.getElementById('statusMsg').innerText = `Ciclo Atualizado: ${horarioNome} | Base Dominante: ${modo}`;
         
         const tbody = document.querySelector('#tabFortes tbody');
         tbody.innerHTML = fortes.map(f => `<tr><td><b>${f.toString().padStart(2,'0')}</b></td><td>${db[f].n}</td><td style="color:var(--blue); font-weight:bold;">${db[f].m}</td><td><span class="badge ${db[f].b}">${db[f].b}</span></td></tr>`).join('');
